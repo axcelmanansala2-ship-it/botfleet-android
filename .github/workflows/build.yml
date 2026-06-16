@@ -1,0 +1,89 @@
+name: Build APK
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
+
+      - name: Build Debug APK
+        run: ./gradlew assembleDebug --no-daemon
+
+      - name: Upload Debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: botfleet-debug-apk
+          path: app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 30
+
+  release:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    needs: build
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
+
+      - name: Build Release APK
+        run: ./gradlew assembleRelease --no-daemon
+
+      - name: Get version name
+        id: get_version
+        run: |
+          VERSION=$(grep -oP 'versionName = "\K[^"]+' app/build.gradle.kts)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.get_version.outputs.version }}-${{ github.run_number }}
+          name: BotFleet v${{ steps.get_version.outputs.version }} (Build ${{ github.run_number }})
+          body: |
+            ## BotFleet Android App
+
+            ### Install
+            Download `app-release-unsigned.apk` and install it on your Android device (Android 7.0+).
+
+            > You may need to enable "Install from unknown sources" in your device settings.
+
+            ### Setup
+            1. Open the app
+            2. Go to **Settings** and enter your BotFleet server URL
+            3. Sign in with your BotFleet credentials
+          files: app/build/outputs/apk/release/app-release-unsigned.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
