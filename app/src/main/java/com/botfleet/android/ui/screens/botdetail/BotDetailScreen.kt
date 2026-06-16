@@ -15,6 +15,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -227,7 +228,7 @@ fun BotDetailScreen(
                                         color = when {
                                             line.contains("ERROR", ignoreCase = true) || line.contains("error", ignoreCase = true) -> Error
                                             line.contains("WARNING", ignoreCase = true) || line.contains("WARN", ignoreCase = true) -> Warning
-                                            else -> androidx.compose.ui.graphics.Color(0xFF9CA3AF)
+                                            else -> Color(0xFF9CA3AF)
                                         },
                                         fontSize = 11.sp,
                                         fontFamily = FontFamily.Monospace,
@@ -275,5 +276,3 @@ fun InfoRow(label: String, value: String) {
         Text(value, color = OnBackground, fontSize = 13.sp, fontWeight = FontWeight.Medium)
     }
 }
-
-private val Color = androidx.compose.ui.graphics.Color
